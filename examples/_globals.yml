@@ -1,0 +1,6 @@
+vars:
+    message:
+        name: My message
+        example: 'I have been watching old movies too!'
+        max-length: 50
+        type: 'string'
