@@ -21,5 +21,5 @@ export const promptSchema = z.object({
     tags: z.array(z.string()).optional(),
     engine: z.string(),
     prompt: z.string(),
-    vars: z.array(variableSchema),
+    vars: z.record(variableSchema),
 })

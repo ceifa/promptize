@@ -18,5 +18,5 @@ export type Prompt = {
     tags?: string[]
     engine: string
     prompt: string
-    vars: Variable[]
+    vars: Record<string, Variable>
 }

@@ -1,7 +1,9 @@
 {
   "name": "promptize",
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
+    "build": "tsc",
     "generate-validations": "ts-to-zod src/types.ts src/type-validations.ts"
   },
   "dependencies": {

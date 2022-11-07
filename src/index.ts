@@ -1,38 +1,35 @@
-import openai from 'openai'
-import yaml from 'yaml'
-import fs from 'node:fs'
-import path from 'node:path'
-import { Prompt } from './types'
-import { promptSchema } from './type-validations'
+import { OpenAIApi } from 'openai'
+import * as yaml from 'yaml'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
+import { Prompt } from './types.js'
+import { promptSchema } from './type-validations.js'
 
 const promptVariableRegex = /(?<!\\)<(\w+)>/g
 
-export default class Promptize {
+export class Promptize {
     private readonly cachedPrompts: Record<string, Prompt> = {}
 
-    constructor(private readonly openai: openai.OpenAIApi, private readonly promptsDirectory: string) {}
+    constructor(private readonly openai: OpenAIApi, private readonly promptsDirectory: string) {}
 
-    public async generate(
-        openai: openai.OpenAIApi,
-        promptId: string,
-        variables: Record<string, any>,
-    ): Promise<string[]> {
-        const prompt = await this.loadPrompt(promptId)
+    public async generate(promptId: string, variables: Record<string, any>): Promise<string[]> {
+        const prompt = await this.getPrompt(promptId)
 
         const promptVariables = prompt.prompt.match(promptVariableRegex)
         let replacedPrompt = prompt.prompt
         if (promptVariables) {
             for (const variable of promptVariables) {
-                if (!variables[variable]) {
+                const variableId = variable.replace(/<|>/g, '')
+                if (!variables[variableId]) {
                     throw new Error(`Missing variable ${variable} in prompt ${promptId}`)
                 }
 
-                replacedPrompt = prompt.prompt.replace(variable, variables[variable])
+                replacedPrompt = prompt.prompt.replace(variable, variables[variableId])
             }
         }
 
         const formattedPrompt = this.sanitize(replacedPrompt)
-        const response = await openai.createCompletion({
+        const response = await this.openai.createCompletion({
             model: prompt.engine,
             prompt: formattedPrompt,
         })
@@ -42,24 +39,29 @@ export default class Promptize {
             .map((choice) => this.sanitize(choice.text as string))
     }
 
-    private sanitize(target: string): string {
-        return target
-            .replace(/\n+\s*/g, '\n')
-            .replace(/ +/g, ' ')
-            .trim()
-    }
-
-    private async loadPrompt(promptId: string): Promise<Prompt> {
+    public async getPrompt(promptId: string): Promise<Prompt> {
         if (this.cachedPrompts[promptId]) {
             return this.cachedPrompts[promptId]
         }
 
-        const prompt = await fs.promises.readFile(path.join(this.promptsDirectory, `${promptId}.yaml`), 'utf-8')
-        const parsed = yaml.parse(prompt)
+        let serializedPrompt: string
+        try {
+            serializedPrompt = await fs.promises.readFile(path.join(this.promptsDirectory, `${promptId}.yml`), 'utf8')
+        } catch (error) {
+            serializedPrompt = await fs.promises.readFile(path.join(this.promptsDirectory, `${promptId}.yaml`), 'utf-8')
+        }
+        const parsed = yaml.parse(serializedPrompt)
 
         const validatedPrompt = await promptSchema.parseAsync(parsed)
 
         this.cachedPrompts[promptId] = parsed
         return validatedPrompt
+    }
+
+    private sanitize(target: string): string {
+        return target
+            .replace(/\n+\s*/g, '\n')
+            .replace(/ +/g, ' ')
+            .trim()
     }
 }
