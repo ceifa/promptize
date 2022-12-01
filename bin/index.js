@@ -1,4 +1,4 @@
-import { OpenAIApi } from 'openai'
+import { Configuration, OpenAIApi } from 'openai'
 import { Promptize } from '../dist/index.js'
 
 const params = process.argv.slice(2)
@@ -15,9 +15,9 @@ if (!token) {
     process.exit(1)
 }
 
-const openai = new OpenAIApi({
-    accessToken: token,
-})
+const openai = new OpenAIApi(new Configuration({
+    apiKey: token,
+}))
 
 const examplesDir = new URL('../examples', import.meta.url).pathname;
 const promptize = new Promptize(openai, examplesDir)
@@ -39,5 +39,6 @@ for (const varId of Object.keys(prompt.vars)) {
     values[varId] = value
 }
 
-const result = await promptize.generate(promptId, values)
+const moderate = consumeOption('--moderate', true)
+const result = await promptize.generate(promptId, values, { moderate })
 console.log(result)

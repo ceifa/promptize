@@ -9,10 +9,11 @@ export const variableSchema = z.object({
 })
 
 export const settingsSchema = z.object({
-    max_tokens: z.number(),
-    temperature: z.number(),
-    frequency_penalty: z.number(),
-    presence_penalty: z.number(),
+    max_tokens: z.number().optional(),
+    temperature: z.number().optional(),
+    frequency_penalty: z.number().optional(),
+    presence_penalty: z.number().optional(),
+    stop: z.array(z.string()).optional(),
 })
 
 export const promptSchema = z.object({
@@ -22,4 +23,5 @@ export const promptSchema = z.object({
     engine: z.string(),
     prompt: z.string(),
     vars: z.record(variableSchema),
+    settings: settingsSchema,
 })

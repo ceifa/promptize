@@ -2,7 +2,7 @@ name: Friend chat
 description: A chat between two friends
 tags: [chat, friends]
 
-engine: text-davinci-002
+engine: text-davinci-003
 prompt: |
     The following is a conversation between me and my friend.
     Me: What have you been up to?

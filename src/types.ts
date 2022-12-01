@@ -1,15 +1,15 @@
 export type Variable = {
     name: string
-    example?: string
-    max_length?: number
     type?: 'string' | 'number' | 'boolean'
+    metadata?: Record<string, any>
 }
 
 export type Settings = {
-    max_tokens: number
-    temperature:  number
-    frequency_penalty: number
-    presence_penalty: number
+    max_tokens?: number
+    temperature?:  number
+    frequency_penalty?: number
+    presence_penalty?: number
+    stop?: string[]
 }
 
 export type Prompt = {
@@ -19,4 +19,6 @@ export type Prompt = {
     engine: string
     prompt: string
     vars: Record<string, Variable>
+    settings: Settings
+    metadata?: Record<string, any>
 }
