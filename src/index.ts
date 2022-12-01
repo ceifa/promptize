@@ -9,8 +9,15 @@ const promptVariableRegex = /(?<!\\)<(\w+)>/g
 
 export class Promptize {
     private readonly cachedPrompts: Record<string, Prompt> = {}
+    private readonly promptsDirectory: string | undefined
 
-    constructor(private readonly openai: OpenAIApi, private readonly promptsDirectory: string) {}
+    constructor(private readonly openai: OpenAIApi, promptsOrDirectory: string | Record<string, Prompt>) {
+        if (typeof promptsOrDirectory === 'string') {
+            this.promptsDirectory = promptsOrDirectory
+        } else {
+            this.cachedPrompts = promptsOrDirectory
+        }
+    }
 
     public async generate(
         promptId: string,
@@ -68,28 +75,48 @@ export class Promptize {
             return this.cachedPrompts[promptId]
         }
 
-        let serializedPrompt: string
-        try {
-            serializedPrompt = await fs.promises.readFile(path.join(this.promptsDirectory, `${promptId}.yml`), 'utf8')
-        } catch (err) {
-            serializedPrompt = await fs.promises.readFile(path.join(this.promptsDirectory, `${promptId}.yaml`), 'utf-8')
-        }
-        const parsed = yaml.parse(serializedPrompt)
+        if (this.promptsDirectory) {
+            let serializedPrompt: string
+            try {
+                serializedPrompt = await fs.promises.readFile(
+                    path.join(this.promptsDirectory, `${promptId}.yml`),
+                    'utf8',
+                )
+            } catch (err) {
+                serializedPrompt = await fs.promises.readFile(
+                    path.join(this.promptsDirectory, `${promptId}.yaml`),
+                    'utf-8',
+                )
+            }
+            const parsed = yaml.parse(serializedPrompt)
 
-        try {
-            const validatedPrompt = await promptSchema.parseAsync(parsed)
-    
-            this.cachedPrompts[promptId] = parsed
-            return validatedPrompt
-        } catch (err) {
-            throw new Error(`Prompt ${promptId} is invalid`, { cause: err })
+            try {
+                const validatedPrompt = await promptSchema.parseAsync(parsed)
+
+                this.cachedPrompts[promptId] = parsed
+                return validatedPrompt
+            } catch (err) {
+                throw new Error(`Prompt ${promptId} is invalid`, { cause: err })
+            }
         }
+
+        throw new Error(`Prompt ${promptId} not found`)
     }
 
-    public async getPrompts(): Promise<Prompt[]> {
-        const files = await fs.promises.readdir(this.promptsDirectory)
-        const prompts = await Promise.all(files.map((file) => this.getPrompt(file.replace(/\.yml|\.yaml/g, ''))))
-        return prompts
+    public async getPrompts(): Promise<Record<string, Prompt>> {
+        if (this.promptsDirectory) {
+            const files = await fs.promises.readdir(this.promptsDirectory)
+            const prompts = await Promise.all(
+                files.map(async (file) => {
+                    const id = file.replace(/\.yml|\.yaml/g, '')
+                    const prompt = await this.getPrompt(id)
+                    return [id, prompt] as const
+                }),
+            )
+            return Object.fromEntries(prompts)
+        } else {
+            return this.cachedPrompts
+        }
     }
 
     private sanitize(target: string): string {
