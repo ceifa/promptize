@@ -39,7 +39,7 @@ export class Promptize {
                     throw new Error(`Missing variable ${variable} in prompt ${promptId}`)
                 }
 
-                replacedPrompt = prompt.prompt.replace(variable, variables[variableId])
+                replacedPrompt = replacedPrompt.replaceAll(variable, variables[variableId])
             }
         }
 
