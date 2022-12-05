@@ -5,7 +5,7 @@ import * as path from 'node:path'
 import { Prompt } from './types.js'
 import { promptSchema } from './type-validations.js'
 
-const promptVariableRegex = /(?<!\\)<(\w+)>/g
+const promptVariableRegex = /(?<!\\)<([A-za-z-]+)>/g
 
 export class Promptize {
     private readonly cachedPrompts: Record<string, Prompt> = {}
