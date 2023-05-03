@@ -1,6 +1,6 @@
 {
   "name": "promptize",
-  "version": "0.0.8",
+  "version": "0.0.10",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -12,7 +12,7 @@
     "dist"
   ],
   "peerDependencies": {
-    "openai": "~3.1.0"
+    "openai": "~3.2.0"
   },
   "dependencies": {
     "yaml": "^2.1.3",

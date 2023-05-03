@@ -53,21 +53,41 @@ export class Promptize {
             }
         }
 
-        const response = await this.openai.createCompletion({
-            model: prompt.engine,
-            prompt: formattedPrompt,
-            max_tokens: prompt.settings.max_tokens,
-            temperature: prompt.settings.temperature,
-            frequency_penalty: prompt.settings.frequency_penalty,
-            presence_penalty: prompt.settings.presence_penalty,
-            n: options?.quantity,
-            stop: prompt.settings.stop,
-            user: options?.user,
-        })
+        if (prompt.engine.includes('gpt-3.5') || prompt.engine.includes('gpt-4')) {
+            const response = await this.openai.createChatCompletion({
+                model: prompt.engine,
+                messages: [{ role: 'user', content: formattedPrompt }],
+                max_tokens: prompt.settings.max_tokens,
+                temperature: prompt.settings.temperature,
+                frequency_penalty: prompt.settings.frequency_penalty,
+                presence_penalty: prompt.settings.presence_penalty,
+                stop: prompt.settings.stop,
+                user: options?.user,
+            })
 
-        return response.data.choices
-            .filter((choice) => choice?.text)
-            .map((choice) => this.sanitize(choice.text as string))
+            const content = response.data.choices?.[0]?.message?.content
+            if (!content) {
+                throw new Error(`Prompt ${promptId} returned no content`)
+            }
+
+            return [this.sanitize(content)]
+        } else {
+            const response = await this.openai.createCompletion({
+                model: prompt.engine,
+                prompt: formattedPrompt,
+                max_tokens: prompt.settings.max_tokens,
+                temperature: prompt.settings.temperature,
+                frequency_penalty: prompt.settings.frequency_penalty,
+                presence_penalty: prompt.settings.presence_penalty,
+                n: options?.quantity,
+                stop: prompt.settings.stop,
+                user: options?.user,
+            })
+
+            return response.data.choices
+                .filter((choice) => choice?.text)
+                .map((choice) => this.sanitize(choice.text as string))
+        }
     }
 
     public async getPrompt(promptId: string): Promise<Prompt> {
